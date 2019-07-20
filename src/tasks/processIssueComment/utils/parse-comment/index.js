@@ -110,10 +110,9 @@ const plugin = {
 
 nlp.plugin(plugin)
 
-function parseAddComment(message, action) {
-    const whoMatched = nlp(message)
-        .match(`${action} [.]`)
-        .normalize({
+function findWho(message, action) {
+    function findWhoSafe(match) {
+        const whoNormalizeSettings = {
             whitespace: true, // remove hyphens, newlines, and force one space between words
             case: false, // keep only first-word, and 'entity' titlecasing
             numbers: false, // turn 'seven' to '7'
@@ -126,8 +125,40 @@ function parseAddComment(message, action) {
             plurals: false, // turn "batmobiles" into "batmobile"
             verbs: false, // turn all verbs into Infinitive form - "I walked" → "I walk"
             honorifics: false, //turn 'Vice Admiral John Smith' to 'John Smith'
-        })
-        .data()[0].text
+        }
+        const matchedSet = nlp(message)
+            .match(match)
+            .normalize(whoNormalizeSettings)
+            .data()
+
+        if (matchedSet.length > 0) {
+            return matchedSet[0].text
+        }
+    }
+
+    const whoMatchedMention = findWhoSafe(`@[.]`)
+    if (whoMatchedMention) {
+        return whoMatchedMention
+    }
+
+    const whoMatchedByAction = findWhoSafe(`${action} [.]`)
+    if (whoMatchedByAction) {
+        return whoMatchedByAction
+    }
+
+    const whoMatchedByFor = findWhoSafe(`[.] for`)
+    if (whoMatchedByFor) {
+        return whoMatchedByFor
+    }
+}
+
+function parseAddSentence(message, action) {
+    const whoMatched = findWho(message, action)
+    if (!whoMatched) {
+        return {
+            who: undefined,
+        }
+    }
 
     const who = whoMatched.startsWith('@') ? whoMatched.substr(1) : whoMatched
 
@@ -159,9 +190,27 @@ function parseAddComment(message, action) {
         })
 
     return {
-        action: 'add',
         who,
         contributions,
+    }
+}
+
+function parseAddComment(message, action) {
+    const contributors = {}
+
+    const sentences = nlp(message).sentences()
+    sentences.forEach(function(sentence) {
+        const sentenceRaw = sentence.data()[0].text
+        const { who, contributions } = parseAddSentence(sentenceRaw, action)
+
+        if (who) {
+            contributors[who] = contributions
+        }
+    })
+
+    return {
+        action: 'add',
+        contributors,
     }
 }
 
