@@ -25,7 +25,7 @@
   "dependencies": {
     "@thundra/core": "^2.2.3",
     "all-contributors-cli": "^6.11.2",
-    "aws-sdk": "^2.395.0",
+    "aws-sdk": "^2.653.0",
     "compromise": "^11.13.0",
     "node-fetch": "^2.3.0",
     "probot": "^8.0.0-beta.1",
