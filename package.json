@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "all-contributors-cli": "^6.19.0",
+    "commit-conv": "^1.0.3",
     "compromise": "^11.13.0",
     "pino": "^6.9.0",
     "probot": "^11.0.1"
